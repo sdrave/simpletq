@@ -30,12 +30,17 @@ import os
 import signal
 import socket
 import stat
+import string
 import subprocess
+import sys
 import time
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('QUEUE_DIRECTORY')
+parser.add_argument('-a', '--add-task', help='add task to the queue')
+parser.add_argument('-n', '--task-name', help='name of the new task')
+parser.add_argument('-d', '--working-dir', help='working directory of the new task')
 args = parser.parse_args()
 
 path = os.path.abspath(os.path.expanduser(args.QUEUE_DIRECTORY))
@@ -53,6 +58,30 @@ if not os.path.exists(path):
 for p in [queue_path, running_path, failed_path, finished_path, pids_path]:
     if not os.path.exists(p):
         os.mkdir(p)
+
+
+if args.add_task:
+    if args.task_name:
+        task_name = args.task_name
+    else:
+        # derive task_name from command to run
+        task_name = args.add_task.lstrip('./').translate(string.maketrans('/"\' ;', '___--'), '\\')
+    filename = os.path.join(queue_path, task_name)
+    filename_counter = 0
+    while True:
+        if not os.path.exists(filename):
+            break
+        filename_counter += 1
+        filename = os.path.join(queue_path, '{}_{}'.format(task_name, filename_counter))
+    # open file and try to ensure that no one else creates the file at the same time
+    fd = os.open(filename, os.O_WRONLY | os.O_EXCL | os.O_CREAT)
+    f = os.fdopen(fd, 'w')
+    f.write('#!/bin/bash\n')
+    if args.working_dir:
+        f.write('cd ' + args.working_dir + '\n')
+    f.write(args.add_task)
+    f.close()
+    sys.exit(0)
 
 
 # create pid file and ensure it is removed at program exit
