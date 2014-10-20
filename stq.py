@@ -98,7 +98,7 @@ signal.signal(signal.SIGTERM, sig_handler)
 waiting = False
 while True:
 
-    # look for new jobs
+    # look for new task
     files = os.listdir(queue_path)
     if not files:
         if not waiting:
@@ -108,10 +108,10 @@ while True:
         continue
     waiting = False
 
-    # select oldest job for processing
+    # select oldest task for processing
     script_name = min((os.path.getmtime(os.path.join(queue_path, f)), f) for f in files)[1]
 
-    # create working directory and move job to this directory
+    # create working directory and move task to this directory
     work_path = os.path.join(running_path, '{}-{}-{}'.format(socket.gethostname(), os.getpid(), script_name))
     os.mkdir(work_path)
     try:
@@ -123,17 +123,18 @@ while True:
         os.rmdir(work_path)
         continue
 
-    # run the job
+    # run the task
     print('\n\n******** LAUNCHING ' + script_name + ' ********\n\n')
     script_path = os.path.join(work_path, script_name)
     os.chmod(script_path, os.stat(script_path).st_mode | stat.S_IEXEC)
     # we use stdbuf -o000 to deactivate stdout stderr buffering s.t. output is in the right order
-    successful = subprocess.call('stdbuf -o000 ' + script_path + ' 2>&1 | tee out.txt',
-                                 cwd=work_path, shell=True) == 0
+    successful = subprocess.call(['/bin/bash', '-c',
+                                  'set -o pipefail; stdbuf -o000 ' + script_path + ' 2>&1 tee out.txt'],
+                                 cwd=work_path) == 0
 
     # move working directory to FINISHED resp. FAILED
     dst_dir = script_name
-    dst_dir_counter = 1
+    dst_dir_counter = 0
     while True:
         dst_path = os.path.join(finished_path if successful else failed_path, dst_dir)
         try:
