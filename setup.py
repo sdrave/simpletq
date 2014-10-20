@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='simpletq',
-    version='0.1.dev1',
+    version='0.1.dev2',
     description='A very simple task queue',
     #long_description=long_description,
     url='https://github.com/sdrave/simpletq',
