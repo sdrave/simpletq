@@ -126,10 +126,11 @@ while True:
     # run the task
     print('\n\n******** LAUNCHING ' + script_name + ' ********\n\n')
     script_path = os.path.join(work_path, script_name)
+    output_path = os.path.join(work_path, 'out.txt')
     os.chmod(script_path, os.stat(script_path).st_mode | stat.S_IEXEC)
     # we use stdbuf -o000 to deactivate stdout stderr buffering s.t. output is in the right order
     successful = subprocess.call(['/bin/bash', '-c',
-                                  'set -o pipefail; stdbuf -o000 ' + script_path + ' 2>&1 tee out.txt'],
+                                  'set -o pipefail; stdbuf -o000 ' + script_path + ' 2>&1 | tee ' + output_path],
                                  cwd=work_path) == 0
 
     # move working directory to FINISHED resp. FAILED
