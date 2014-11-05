@@ -1,4 +1,4 @@
-#!env python
+#!/usr/bin/env python
 # Copyright (c) 2014, Stephan Rave
 # All rights reserved.
 #
