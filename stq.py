@@ -41,6 +41,7 @@ parser.add_argument('QUEUE_DIRECTORY')
 parser.add_argument('-a', '--add-task', help='add task to the queue')
 parser.add_argument('-n', '--task-name', help='name of the new task')
 parser.add_argument('-d', '--working-dir', help='working directory of the new task')
+parser.add_argument('-w', '--wait', help='wait until all tasks have finished, then exit', action='store_true')
 args = parser.parse_args()
 
 path = os.path.abspath(os.path.expanduser(args.QUEUE_DIRECTORY))
@@ -81,6 +82,21 @@ if args.add_task:
         f.write('cd ' + args.working_dir + '\n')
     f.write(args.add_task)
     f.close()
+
+
+if args.wait:
+    print('WAITING FOR ALL TASK TO FINISH ...')
+    old_num_queue, old_num_running = -1, -1
+    while old_num_queue != 0 or old_num_running != 0:
+        time.sleep(10)
+        num_queue = len(os.listdir(queue_path))
+        num_running = len(os.listdir(running_path))
+        if num_queue != old_num_queue or num_running != old_num_running:
+            print('{} running and {} queued tasks'.format(num_running, num_queue))
+            old_num_queue, old_num_running = num_queue, num_running
+
+
+if args.add_task or args.wait:
     sys.exit(0)
 
 
